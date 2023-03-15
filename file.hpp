@@ -9,7 +9,7 @@
 #include "node.hpp"
 
 namespace nvparsehtml {
-//! Represents data loaded from a file
+//! Responsible for reading a file and providing a null terminated pointer to its contents
 template <class Ch>
 class File {
    public:
@@ -36,7 +36,7 @@ class File {
     }
 
     //! Loads file into the memory. Data will be automatically destroyed by the
-    //! destructor. \param filename filename to load as std::string.
+    //! destructor. \param filename Filename to load as std::string.
     File(const std::string &filename) : File(filename.c_str()) {
     }
 

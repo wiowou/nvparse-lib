@@ -38,7 +38,8 @@ class String {
     }
 
     Ch *data() const {
-        return m_c;
+        Ch *c = m_c;
+        return c;
     }
 
     void to_uppercase() {

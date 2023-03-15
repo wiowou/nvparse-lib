@@ -153,7 +153,7 @@ inline OutIt print_attributes(OutIt out, Node<Ch> *node) {
 // Print data node
 template <class OutIt, class Ch>
 inline OutIt print_data_node(OutIt out, Node<Ch> *node, int indent) {
-    assert(node->type() == NODE_DATA);
+    assert(node->type() == Node<Ch>::NODE_DATA);
     if (!print_no_indenting)
         out = fill_chars(out, indent, Ch('\t'));
     out = copy_and_expand_chars(node->value(), Ch(0), out);
@@ -163,7 +163,7 @@ inline OutIt print_data_node(OutIt out, Node<Ch> *node, int indent) {
 // Print data node
 template <class OutIt, class Ch>
 inline OutIt print_cdata_node(OutIt out, Node<Ch> *node, int indent) {
-    assert(node->type() == NODE_CDATA);
+    assert(node->type() == Node<Ch>::NODE_CDATA);
     if (!print_no_indenting)
         out = fill_chars(out, indent, Ch('\t'));
     *out = Ch('<'), ++out;
@@ -185,7 +185,7 @@ inline OutIt print_cdata_node(OutIt out, Node<Ch> *node, int indent) {
 // Print element node
 template <class OutIt, class Ch>
 inline OutIt print_element_node(OutIt out, Node<Ch> *node, int indent) {
-    assert(node->type() <= NODE_ELEMENT);
+    assert(node->type() <= Node<Ch>::NODE_ELEMENT);
 
     // Print element name and attributes, if any
     if (!print_no_indenting)
@@ -198,7 +198,7 @@ inline OutIt print_element_node(OutIt out, Node<Ch> *node, int indent) {
     // if (node->value_size() == 0 && !node->first_node())
     if (node->value().empty() && !node->children_empty()) {
         // Print childless node tag ending
-        if (node->type() != NODE_ELEMENT_VOID) {
+        if (node->type() != Node<Ch>::NODE_ELEMENT_VOID) {
             *out = Ch('/'), ++out;
         }
         *out = Ch('>'), ++out;
@@ -208,11 +208,12 @@ inline OutIt print_element_node(OutIt out, Node<Ch> *node, int indent) {
     // Print normal node tag ending
     *out = Ch('>'), ++out;
 
-    if (!node->children_empty() && node->type() == NODE_ELEMENT_TEXT) {
+    if (!node->children_empty() && node->type() == Node<Ch>::NODE_ELEMENT_TEXT) {
         out = copy_chars(node->value(), out);
-    } else if (!node->children_empty() && node->type() == NODE_ELEMENT) {
+    } else if (!node->children_empty() && node->type() == Node<Ch>::NODE_ELEMENT) {
         out = copy_and_expand_chars(node->value(), Ch(0), out);
-    } else if (node->children_size() == 1 && (*(node->child_begin()))->type() == NODE_DATA) {
+    } else if (node->children_size() == 1 &&
+               (*(node->child_begin()))->type() == Node<Ch>::NODE_DATA) {
         out = copy_chars(node->value(), out);
     } else {
         // Print all children with full indenting
@@ -257,7 +258,7 @@ inline OutIt print_declaration_node(OutIt out, Node<Ch> *node, int indent) {
 // Print comment node
 template <class OutIt, class Ch>
 inline OutIt print_comment_node(OutIt out, Node<Ch> *node, int indent) {
-    assert(node->type() == NODE_COMMENT);
+    assert(node->type() == Node<Ch>::NODE_COMMENT);
     if (!print_no_indenting)
         out = fill_chars(out, indent, Ch('\t'));
     *out = Ch('<'), ++out;
@@ -274,7 +275,7 @@ inline OutIt print_comment_node(OutIt out, Node<Ch> *node, int indent) {
 // Print doctype node
 template <class OutIt, class Ch>
 inline OutIt print_doctype_node(OutIt out, Node<Ch> *node, int indent) {
-    assert(node->type() == NODE_DOCTYPE);
+    assert(node->type() == Node<Ch>::NODE_DOCTYPE);
     if (!print_no_indenting)
         out = fill_chars(out, indent, Ch('\t'));
     *out = Ch('<'), ++out;
@@ -295,7 +296,7 @@ inline OutIt print_doctype_node(OutIt out, Node<Ch> *node, int indent) {
 // Print pi node
 template <class OutIt, class Ch>
 inline OutIt print_pi_node(OutIt out, Node<Ch> *node, int indent) {
-    assert(node->type() == NODE_PI);
+    assert(node->type() == Node<Ch>::NODE_PI);
     if (!print_no_indenting)
         out = fill_chars(out, indent, Ch('\t'));
     *out = Ch('<'), ++out;
@@ -314,44 +315,44 @@ inline OutIt print_node(OutIt out, Node<Ch> *node, int indent) {
     // Print proper node type
     switch (node->type()) {
         // Element
-        case NODE_ELEMENT_VOID:
-        case NODE_ELEMENT_TEXT:
-        case NODE_ELEMENT:
+        case Node<Ch>::NODE_ELEMENT_VOID:
+        case Node<Ch>::NODE_ELEMENT_TEXT:
+        case Node<Ch>::NODE_ELEMENT:
             out = print_element_node(out, node, indent);
             break;
 
         // Data
-        case NODE_DATA:
+        case Node<Ch>::NODE_DATA:
             out = print_data_node(out, node, indent);
             break;
 
         // CDATA
-        case NODE_CDATA:
+        case Node<Ch>::NODE_CDATA:
             out = print_cdata_node(out, node, indent);
             break;
 
         // Declaration
-        case NODE_DECLARATION:
+        case Node<Ch>::NODE_DECLARATION:
             out = print_declaration_node(out, node, indent);
             break;
 
         // Comment
-        case NODE_COMMENT:
+        case Node<Ch>::NODE_COMMENT:
             out = print_comment_node(out, node, indent);
             break;
 
         // Doctype
-        case NODE_DOCTYPE:
+        case Node<Ch>::NODE_DOCTYPE:
             out = print_doctype_node(out, node, indent);
             break;
 
         // Pi
-        case NODE_PI:
+        case Node<Ch>::NODE_PI:
             out = print_pi_node(out, node, indent);
             break;
 
         // Document
-        case NODE_DOCUMENT:
+        case Node<Ch>::NODE_DOCUMENT:
             out = print_children(out, node, indent);
             break;
 

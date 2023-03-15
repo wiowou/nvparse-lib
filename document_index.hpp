@@ -1,5 +1,5 @@
-#ifndef NVPARSE_SELECTORS_HPP_INCLUDED
-#define NVPARSE_SELECTORS_HPP_INCLUDED
+#ifndef NVPARSE_DOCUMENTINDEX_HPP_INCLUDED
+#define NVPARSE_DOCUMENTINDEX_HPP_INCLUDED
 
 #include <algorithm>
 #include <map>
@@ -12,9 +12,9 @@
 
 namespace nvparsehtml {
 template <class Ch>
-class Selector {
+class DocumentIndex {
    public:
-    Selector(DocumentNode<Ch> *doc) : m_doc(doc) {
+    DocumentIndex(DocumentNode<Ch> *doc) : m_doc(doc) {
         this->traverse_nodes(m_doc);
     }
 

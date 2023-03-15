@@ -15,7 +15,7 @@
 #include "text.hpp"
 
 namespace nvparsehtml {
-
+//! Responsible for parsing XHTML and storing it as a DOM tree
 template <typename Ch>
 class DocumentNode : public Node<Ch> {
    private:
@@ -31,7 +31,7 @@ class DocumentNode : public Node<Ch> {
           m_parse_normalize_whitespace(false),
           m_parse_trim_whitespace(false),
           m_parse_no_utf8(false) {
-        this->type(NODE_DOCUMENT);
+        this->type(Node<Ch>::NODE_DOCUMENT);
     }
 
     DocumentNode(File<Ch> &file) : DocumentNode() {
@@ -98,9 +98,9 @@ class DocumentNode : public Node<Ch> {
 
     // is this a known void, script or style html element?
     // name must be lower case
-    static NODE_TYPE classify_node(String<Ch> name) {
+    static typename Node<Ch>::NODE_TYPE classify_node(String<Ch> name) {
         if (name.length() < 2)
-            return NODE_ELEMENT;
+            return Node<Ch>::NODE_ELEMENT;
 
         String<Ch> area("rea", 3);
         String<Ch> base("ase", 3);
@@ -157,10 +157,10 @@ class DocumentNode : public Node<Ch> {
             case Ch('s'):
                 isVoidElement = ame == source;
                 if (ame == script) {
-                    return NODE_ELEMENT_TEXT;
+                    return Node<Ch>::NODE_ELEMENT_TEXT;
                 }
                 if (ame == style) {
-                    return NODE_ELEMENT_TEXT;
+                    return Node<Ch>::NODE_ELEMENT_TEXT;
                 }
                 break;
             case Ch('t'):
@@ -171,9 +171,9 @@ class DocumentNode : public Node<Ch> {
                 break;
         }
         if (isVoidElement) {
-            return NODE_ELEMENT_VOID;
+            return Node<Ch>::NODE_ELEMENT_VOID;
         }
-        return NODE_ELEMENT;
+        return Node<Ch>::NODE_ELEMENT;
     }
 
     static void parse_bom(Ch *&text) {
@@ -188,7 +188,7 @@ class DocumentNode : public Node<Ch> {
     // Parse XML declaration (<?xml...)
     Node<Ch> *parse_xml_declaration(Ch *&text) {
         // Create declaration
-        Node<Ch> *declaration = new Node<Ch>(NODE_DECLARATION);
+        Node<Ch> *declaration = new Node<Ch>(Node<Ch>::NODE_DECLARATION);
 
         // Skip whitespace before attributes or ?>
         Text<Ch>::template skip<whitespace_pred<Ch>>(text);
@@ -218,7 +218,7 @@ class DocumentNode : public Node<Ch> {
         }
 
         // Create comment node
-        Node<Ch> *comment = new Node<Ch>(NODE_COMMENT);
+        Node<Ch> *comment = new Node<Ch>(Node<Ch>::NODE_COMMENT);
         comment->value(String<Ch>(value, text - value));
 
         text += 3;  // Skip '-->'
@@ -267,7 +267,7 @@ class DocumentNode : public Node<Ch> {
         }
 
         // Create a new doctype node
-        Node<Ch> *doctype = new Node<Ch>(NODE_DOCTYPE);
+        Node<Ch> *doctype = new Node<Ch>(Node<Ch>::NODE_DOCTYPE);
         doctype->value(String<Ch>(value, text - value));
 
         text += 1;  // skip '>'
@@ -277,7 +277,7 @@ class DocumentNode : public Node<Ch> {
     // Parse PI
     Node<Ch> *parse_pi(Ch *&text) {
         // Create pi node
-        Node<Ch> *pi = new Node<Ch>(NODE_PI);
+        Node<Ch> *pi = new Node<Ch>(Node<Ch>::NODE_PI);
 
         // Extract PI target name
         Ch *name = text;
@@ -402,7 +402,7 @@ class DocumentNode : public Node<Ch> {
         }
 
         // Create new cdata node
-        Node<Ch> *cdata = new Node<Ch>(NODE_CDATA);
+        Node<Ch> *cdata = new Node<Ch>(Node<Ch>::NODE_CDATA);
         cdata->value(String<Ch>(value, text - value));
 
         text += 3;  // Skip ]]>
@@ -421,7 +421,7 @@ class DocumentNode : public Node<Ch> {
         String<Ch> elementName(name, text - name);
         elementName.to_lowercase();
         // Get handle to element node
-        NODE_TYPE type = classify_node(elementName);
+        typename Node<Ch>::NODE_TYPE type = classify_node(elementName);
         Node<Ch> *element = new Node<Ch>(type);
         element->name(elementName);
 
@@ -436,7 +436,7 @@ class DocumentNode : public Node<Ch> {
         if (*text == Ch('>')) {
             ++text;
             // if (element->type() != node_element_void)
-            if (element->type() != NODE_ELEMENT_VOID) {
+            if (element->type() != Node<Ch>::NODE_ELEMENT_VOID) {
                 this->parse_node_contents(text, element);
             }
         } else if (*text == Ch('/')) {
@@ -578,7 +578,7 @@ class DocumentNode : public Node<Ch> {
                 default:
                     // if (node->element_type() == node_element_script ||
                     // node->element_type() == node_element_style)
-                    if (node->type() == NODE_ELEMENT_TEXT) {
+                    if (node->type() == Node<Ch>::NODE_ELEMENT_TEXT) {
                         next_char = parse_as_text_only(node, text, contents_start);
                     } else {
                         next_char = parse_and_append_data(node, text, contents_start);

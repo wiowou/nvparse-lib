@@ -261,6 +261,28 @@ struct Text {
         255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,  // E
         255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255   // F
     };
+
+    // Text (i.e. ids and class names) (only _ - a-z A-z 0-9)
+    static constexpr unsigned char lookup_selector_text[256] = 
+    {
+    //  0   1   2   3   4   5   6   7   8   9   A   B   C   D   E   F
+        0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  // 0
+        0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  // 1
+        0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  1,  0,  0,  // 2
+        1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  0,  0,  0,  0,  0,  0,  // 3
+        0,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  // 4
+        1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  0,  0,  0,  0,  1,  // 5
+        0,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  // 6
+        1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  0,  0,  0,  0,  0,  // 7
+        0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  // 8
+        0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  // 9
+        0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  // A
+        0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  // B
+        0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  // C
+        0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  // D
+        0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  // E
+        0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0   // F
+    };
     // clang-format on
 
     // Insert coded character, using UTF8 or 8-bit ASCII
@@ -539,6 +561,22 @@ struct attribute_value_pure_pred {
         if (Quote == Ch('\"'))
             return Text<Ch>::lookup_attribute_data_2_pure[static_cast<unsigned char>(ch)];
         return 0;  // Should never be executed, to avoid warnings on Comeau
+    }
+};
+
+// Detect end or target
+template <typename Ch, Ch Target>
+struct target_or_end_pred {
+    static unsigned char test(Ch ch) {
+        return ch != Target && ch != '\0';
+    }
+};
+
+// Detect text characters
+template <typename Ch>
+struct selector_text_pred {
+    static unsigned char test(Ch ch) {
+        return Text<Ch>::lookup_selector_text[static_cast<unsigned char>(ch)];
     }
 };
 }  // namespace nvparsehtml
