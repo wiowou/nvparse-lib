@@ -458,7 +458,7 @@ inline OutIt print_node(OutIt out, Node<Ch> *node, int indent) {
     }
 
     // If indenting not disabled, add line break after node
-    if (!print_no_indenting)
+    if (!print_no_indenting && node->type() != Node<Ch>::NODE_DOCUMENT)
         *out = Ch('\n'), ++out;
 
     // Return modified iterator
