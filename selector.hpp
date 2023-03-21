@@ -128,6 +128,9 @@ class Selector {
         if (cur_token->type == SELECTOR_DESCENDANT) {  // remove whitespace at end
             cur_token = nullptr;
         }
+        if (root->right.get() != nullptr) {
+            return root->right;
+        }
         return root;
     }
 
@@ -178,9 +181,9 @@ class Selector {
             if (*text == 0) {
                 throw std::runtime_error("unexpected end of data");
             }
-            if (*text == ')') {
+            if (*text == ')' && *(text - 1) != '\\') {
                 --paren_count;
-            } else if (*text == '(') {
+            } else if (*text == '(' && *(text - 1) != '\\') {
                 ++paren_count;
             }
         }
@@ -290,7 +293,7 @@ class Selector {
         }
         if (eq_loc >= s.length() - 1) {
             char *end = start;
-            Text<char>::template skip<selector_text_pred<char>>(end);
+            Text<char>::template skip<attribute_name_pred<char>>(end);
             std::string name(start, end - start);
             token->name = name;
             prev_token->right = token;
@@ -311,7 +314,7 @@ class Selector {
             Text<char>::template skip<attribute_value_pred<char, char('\'')>>(end);
         } else {
             end = val_start;
-            Text<char>::template skip<selector_text_pred<char>>(end);
+            Text<char>::template skip<text_pred<char>>(end);
         }
         std::string value(val_start, end - val_start);
         token->value = value;
@@ -335,7 +338,7 @@ class Selector {
                 token->op = ATT_OP_EQUALS;
         }
         end = start;
-        Text<char>::template skip<selector_text_pred<char>>(end);
+        Text<char>::template skip<attribute_name_pred<char>>(end);
         std::string name(start, end - start);
         token->name = name;
         prev_token->right = token;

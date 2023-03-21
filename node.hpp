@@ -181,7 +181,7 @@ class Node {
     //! Are there any children?
     //! \return whether this \ref Node has any children.
     bool children_empty() const {
-        return !m_child_nodes.empty();
+        return m_child_nodes.empty();
     }
     //! Gets number of children.
     //! \return number of children.

@@ -6,6 +6,7 @@
 
 #include "document.hpp"
 #include "node.hpp"
+#include "text.hpp"
 
 namespace nvparsehtml {
 ///////////////////////////////////////////////////////////////////////
@@ -20,9 +21,16 @@ const bool print_no_indenting = false;  //!< Printer flag instructing the printe
 namespace internal {
 template <class OutIt, class Ch>
 inline OutIt print_children(OutIt out, Node<Ch> *node, int indent);
-
 ///////////////////////////////////////////////////////////////////////////
 // Internal character operations
+
+// Fill given output iterator with repetitions of the same character
+template <class OutIt, class Ch>
+inline OutIt fill_chars(OutIt out, int n, Ch ch) {
+    for (int i = 0; i < n; ++i)
+        *out++ = ch;
+    return out;
+}
 
 // Copy characters from given range to given output iterator
 template <class OutIt, class Ch>
@@ -31,6 +39,61 @@ inline OutIt copy_chars(const String<Ch> &s, OutIt out) {
     const Ch *end = begin + s.length();
     while (begin != end)
         *out++ = *begin++;
+    return out;
+}
+
+// Copy characters from given range to given output iterator
+// and combine multiple whitespace chars (space, \n, \t, \r) into space
+template <class OutIt, class Ch>
+inline OutIt copy_chars_combine_ws(const String<Ch> &s, OutIt out) {
+    bool is_prev_char_ws = false;
+    Ch *begin = s.data();
+    const Ch *end = begin + s.length();
+    while (whitespace_pred<Ch>::test(*begin) && begin != end) {
+        ++begin;
+    }
+    while (begin != end) {
+        if (is_prev_char_ws && whitespace_pred<Ch>::test(*begin)) {
+            ++begin;
+        } else if (is_prev_char_ws && !whitespace_pred<Ch>::test(*begin)) {
+            *out++ = *begin++;
+            is_prev_char_ws = false;
+        } else {
+            is_prev_char_ws = whitespace_pred<Ch>::test(*begin);
+            if (is_prev_char_ws) {
+                *out++ = Ch(' ');
+            } else {
+                *out++ = *begin++;
+            }
+        }
+    }
+    return out;
+}
+
+// Copy characters from given range to given output iterator
+// and combine multiple whitespace chars (space, \n, \t, \r) into space
+template <class OutIt, class Ch>
+inline OutIt copy_chars_rewrite_cr(const String<Ch> &s, int indent, OutIt out) {
+    bool is_prev_char_cr = false;
+    Ch *begin = s.data();
+    const Ch *end = begin + s.length();
+    while (begin != end) {
+        if (is_prev_char_cr && whitespace_pred<Ch>::test(*begin)) {
+            ++begin;
+        } else if (is_prev_char_cr && !whitespace_pred<Ch>::test(*begin)) {
+            *out++ = *begin++;
+            is_prev_char_cr = false;
+        } else {
+            is_prev_char_cr = *begin == Ch('\n');
+            if (is_prev_char_cr) {
+                *out++ = Ch('\n');
+                if (!print_no_indenting)
+                    out = fill_chars(out, indent, Ch('\t'));
+            } else {
+                *out++ = *begin++;
+            }
+        }
+    }
     return out;
 }
 
@@ -86,14 +149,6 @@ inline OutIt copy_and_expand_chars(const String<Ch> &s, Ch noexpand, OutIt out) 
         }
         ++begin;  // Step to next character
     }
-    return out;
-}
-
-// Fill given output iterator with repetitions of the same character
-template <class OutIt, class Ch>
-inline OutIt fill_chars(OutIt out, int n, Ch ch) {
-    for (int i = 0; i < n; ++i)
-        *out++ = ch;
     return out;
 }
 
@@ -195,35 +250,71 @@ inline OutIt print_element_node(OutIt out, Node<Ch> *node, int indent) {
     out = print_attributes(out, node);
 
     // If node is childless
-    // if (node->value_size() == 0 && !node->first_node())
-    if (node->value().empty() && !node->children_empty()) {
+    if (node->children_empty() && node->value().empty()) {
         // Print childless node tag ending
-        if (node->type() != Node<Ch>::NODE_ELEMENT_VOID) {
-            *out = Ch('/'), ++out;
-        }
+        *out = Ch('/'), ++out;
+        *out = Ch('>'), ++out;
+        return out;
+    } else if (node->children_empty()) {
+        // Print normal node tag ending
+        *out = Ch('>'), ++out;
+        out = copy_chars_combine_ws(node->value(), out);
+        // Print node end
+        *out = Ch('<'), ++out;
+        *out = Ch('/'), ++out;
+        out = copy_chars(node->name(), out);
         *out = Ch('>'), ++out;
         return out;
     }
 
     // Print normal node tag ending
     *out = Ch('>'), ++out;
+    // Print all children with full indenting
+    if (!print_no_indenting)
+        *out = Ch('\n'), ++out;
+    out = print_children(out, node, indent + 1);
+    if (!print_no_indenting)
+        out = fill_chars(out, indent, Ch('\t'));
+    // Print node end
+    *out = Ch('<'), ++out;
+    *out = Ch('/'), ++out;
+    out = copy_chars(node->name(), out);
+    *out = Ch('>'), ++out;
 
-    if (!node->children_empty() && node->type() == Node<Ch>::NODE_ELEMENT_TEXT) {
-        out = copy_chars(node->value(), out);
-    } else if (!node->children_empty() && node->type() == Node<Ch>::NODE_ELEMENT) {
-        out = copy_and_expand_chars(node->value(), Ch(0), out);
-    } else if (node->children_size() == 1 &&
-               (*(node->child_begin()))->type() == Node<Ch>::NODE_DATA) {
-        out = copy_chars(node->value(), out);
-    } else {
-        // Print all children with full indenting
-        if (!print_no_indenting)
-            *out = Ch('\n'), ++out;
-        out = print_children(out, node, indent + 1);
-        if (!print_no_indenting)
-            out = fill_chars(out, indent, Ch('\t'));
-    }
+    return out;
+}
 
+// Print element void node
+template <class OutIt, class Ch>
+inline OutIt print_element_void_node(OutIt out, Node<Ch> *node, int indent) {
+    assert(node->type() <= Node<Ch>::NODE_ELEMENT);
+
+    // Print element name and attributes, if any
+    if (!print_no_indenting)
+        out = fill_chars(out, indent, Ch('\t'));
+    *out = Ch('<'), ++out;
+    out = copy_chars(node->name(), out);
+    out = print_attributes(out, node);
+    *out = Ch('>'), ++out;
+    return out;
+}
+
+// Print element text node
+template <class OutIt, class Ch>
+inline OutIt print_element_text_node(OutIt out, Node<Ch> *node, int indent) {
+    assert(node->type() <= Node<Ch>::NODE_ELEMENT_TEXT);
+
+    // Print element name and attributes, if any
+    if (!print_no_indenting)
+        out = fill_chars(out, indent, Ch('\t'));
+    *out = Ch('<'), ++out;
+    out = copy_chars(node->name(), out);
+    out = print_attributes(out, node);
+    // Print normal node tag ending
+    *out = Ch('>'), ++out;
+    out = copy_chars(node->value(), out);
+    if (!print_no_indenting)
+        out = fill_chars(out, indent, Ch('\t'));
     // Print node end
     *out = Ch('<'), ++out;
     *out = Ch('/'), ++out;
@@ -315,8 +406,12 @@ inline OutIt print_node(OutIt out, Node<Ch> *node, int indent) {
     // Print proper node type
     switch (node->type()) {
         // Element
-        case Node<Ch>::NODE_ELEMENT_VOID:
         case Node<Ch>::NODE_ELEMENT_TEXT:
+            out = print_element_text_node(out, node, indent);
+            break;
+        case Node<Ch>::NODE_ELEMENT_VOID:
+            out = print_element_void_node(out, node, indent);
+            break;
         case Node<Ch>::NODE_ELEMENT:
             out = print_element_node(out, node, indent);
             break;
